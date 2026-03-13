@@ -1,26 +1,28 @@
 # Compressed Space Retrieval
 
-A tiny neural network learns to retrieve data directly from compressed storage — without knowing anything about compression or SQL.
+Exploring whether a small neural network can learn to predict which blocks of compressed data to fetch for a given query, without the model having any knowledge of compression or SQL.
+
+Early prototype — testing feasibility, not making claims.
 
 ## The Idea
 
-Instead of decompress → query → result, a small NN learns which regions of compressed data to fetch for a given query. The model emits "tool calls" (block addresses) into the compressed space. An environment handles decompression invisibly. Training and inference are identical from the model's perspective.
+A small NN receives a query and outputs block address predictions. An environment actions those predictions against a compressed data store, handling decompression invisibly. The model only ever sees query in, results back — identical in training and inference.
 
 ```
-Query → NN → [block addresses] → Environment fetches & decompresses → Results
-                                  (invisible to model)
+Query -> NN -> [block addresses] -> Environment fetches & decompresses -> Results
+                                    (invisible to model)
 ```
 
-The model learns a retrieval policy, not compression or SQL. It's a learned index over compressed storage.
+## Status
 
-## Results
+One synthetic test so far. 2000 rows, 80 compressed blocks, 10 categories, compound queries.
 
-| Scenario | Recall | Data Scanned | Model Size |
-|----------|--------|-------------|------------|
-| Clustered data | 100% | 7.2% | 29k params |
-| Random data | 90.6% | 59.6% | 29k params |
+| Scenario | Recall | Blocks Scanned | Notes |
+|----------|--------|---------------|-------|
+| Clustered (sorted) data | 100% | 7.2% | Model learns clean block boundaries |
+| Random (unsorted) data | 90.6% | 59.6% | Scattered data = scattered access |
 
-Clustered data (sorted by category) gives the model clean block boundaries to learn. All results verified bit-perfect against SQL ground truth.
+The clustered result is encouraging but expected — sorted data naturally groups into blocks. The random result shows the model struggles when there's no spatial locality to learn. Neither result is surprising on its own; the question is whether this scales or generalizes to anything useful.
 
 ## Run
 
@@ -31,13 +33,11 @@ python prototype.py
 
 ## How It Works
 
-1. A SQLite database is created as ground truth
-2. The same data is serialized and compressed into independent blocks (zlib)
-3. A small MLP learns which blocks to request for each query type
-4. At inference, the model's block predictions are actioned against the compressed store
-5. Results are compared against SQL to verify correctness
-
-The key property: compression is deterministic, so the mapping from query semantics to block addresses is stable and learnable.
+1. A SQLite database provides ground truth query results
+2. The same data is serialized and compressed into independent zlib blocks
+3. A small MLP is trained to predict which blocks contain matching rows
+4. At inference, predicted blocks are fetched from the compressed store
+5. Results are compared against SQL ground truth to check correctness
 
 ## License
 
