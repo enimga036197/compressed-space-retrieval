@@ -39,6 +39,14 @@ python prototype.py
 4. At inference, predicted blocks are fetched from the compressed store
 5. Results are compared against SQL ground truth to check correctness
 
+## Properties Worth Noting
+
+**The model cannot hallucinate content.** It only emits addresses, never generates data. If an address is wrong, the returned data won't match — a detectable failure. If the data doesn't exist in the store, the result is empty, not fabricated. Every output is grounded in actual stored data or is a verifiable miss.
+
+**Knowledge lives in the store, not the weights.** The NN only needs enough capacity to learn the retrieval policy (which addresses map to which queries). The actual knowledge is in the compressed data, stored exactly and verifiably. A compressed database holding N facts is dramatically smaller than an LLM that has N facts approximate and lossy in its parameters.
+
+These are architectural properties of the decoupled design, not optimizations. Whether they hold up at scale is untested.
+
 ## Next
 
 - Test with unseen query combinations (train/test split on query types, not just instances)
