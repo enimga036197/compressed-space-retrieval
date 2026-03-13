@@ -39,6 +39,14 @@ python prototype.py
 4. At inference, predicted blocks are fetched from the compressed store
 5. Results are compared against SQL ground truth to check correctness
 
+## Next
+
+- Test with unseen query combinations (train/test split on query types, not just instances)
+- Try real-world data (CSV/Parquet) instead of synthetic
+- Iterative retrieval — model requests blocks in rounds, refining based on what comes back
+- Byte-level addressing instead of block-level
+- Compare against a traditional index on the same data to see if the NN adds anything
+
 ## License
 
 MIT
